@@ -32,8 +32,8 @@ def LL_marginal(X, enc_model, dec_model, batch_size, nsamps=10, latent_dim=2):
     """
     # sample: z ~ q(z | x)
     Zargs = enc_model.predict(X, batch_size=batch_size)
-    z_means = Zargs[:,latent_dim:]
-    z_stddev = Zargs[:,:latent_dim]
+    z_means = Zargs[:,:latent_dim]
+    z_stddev = Zargs[:,latent_dim:]
     z_ts = sample_z((z_means, z_stddev), nsamps)
 
     # compute importance sampling weights
@@ -63,10 +63,10 @@ def get_model_files(args):
         return [args.model_file]
     return glob.glob(args.model_file)
 
-def batch_inds(fnms):
+def get_batch_inds(fnms):
     if len(fnms) == 0:
         return [0]
-    bs = [int(f.split('-')[-1].split('.')[0])+1 for f in fnms]
+    return [int(f.split('-')[-1].split('.')[0]) for f in fnms]
 
 def eval_LL(X, model_file, nsamps):
     batch_size = len(X)
@@ -79,7 +79,7 @@ def get_outfile(args):
 
 def write_results(LLs, fnm):
     with open(fnm, 'w') as f:
-        f.write('\n'.join(['{},{},{}'.format(x,y,z) for x,y,z in LLs]))
+        f.write('\n'.join([','.join([str(x) for x in w]) for w in LLs]))
 
 def main(args):
     """
@@ -87,11 +87,15 @@ def main(args):
     """
     x_train, _, x_test, _ = load_data()
     model_files = get_model_files(args)
-    LLs = []
-    for model_file in model_files:
+    batch_inds = get_batch_inds(model_files)
+    inds = np.argsort(batch_inds)
+    LLs = [['batch_ind', 'model_file','LL (train)','LL (test)']]
+    for i in inds:
+        batch_ind = batch_inds[i]
+        model_file = model_files[i]
         LLtr = eval_LL(x_train, model_file, args.nsamps)
         LLte = eval_LL(x_test, model_file, args.nsamps)
-        LLs.append([model_file, LLtr, LLte])
+        LLs.append([batch_ind, model_file, LLtr, LLte])
         print LLs[-1]
     write_results(LLs, get_outfile(args))
 

@@ -165,7 +165,7 @@ def train_wakesleep(X, wake_model, sleep_model, dec_model, latent_dim, nepochs, 
 def load_data():
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
 
-    # convert data from [n x 28 x 28] -> [n x 784], binary
+    # convert data from [n x 28 x 28] -> [n x 784], between 0.0 and 1.0
     x_train = x_train.astype('float32') / 255.
     x_test = x_test.astype('float32') / 255.
     x_train = x_train.reshape((len(x_train), np.prod(x_train.shape[1:])))
